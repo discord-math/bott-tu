@@ -1,5 +1,6 @@
 [tool.pyright]
 pythonVersion = "3.13"
+strict = ["*"]
 
 [tool.black]
 line-length = 120

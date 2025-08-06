@@ -1,0 +1,31 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  pyright:
+    name: "Type-check with Pyright"
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - uses: actions/setup-python@v1
+      with:
+        python-version: 3.13
+    - name: pip
+      run: pip install -r requirements.txt -r requirements_dev.txt
+    - run: pyright
+
+  format:
+    name: "Check formatting with black and isort"
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - uses: actions/setup-python@v1
+      with:
+        python-version: 3.13
+    - name: pip
+      run: pip install -r requirements.txt -r requirements_dev.txt
+    - name: black
+      run: black --check .
+    - name: isort
+      run: isort --check .
