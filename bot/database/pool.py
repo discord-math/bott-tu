@@ -1,5 +1,5 @@
-import asyncpg
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 
-async def create_database_pool(*, database_connection_string: str) -> asyncpg.Pool:
-    return await asyncpg.create_pool(dsn=database_connection_string, min_size=10, max_size=20)
+async def create_database_pool(*, database_connection_string: str) -> AsyncEngine:
+    return create_async_engine(url=database_connection_string, pool_size=10, max_overflow=10)
