@@ -1,6 +1,10 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 
 import asyncpg
+
+from bot.database.interpolation import FieldOrder
 
 
 @dataclass(kw_only=True)
@@ -11,6 +15,18 @@ class BotConfig:
     """
 
     discord_token: str
+
+
+@dataclass(kw_only=True)
+class BotConfigRow:
+    discord_token: str
+
+    def to_data(self) -> BotConfig:
+        return BotConfig(discord_token=self.discord_token)
+
+    @staticmethod
+    def from_data(data: BotConfig) -> BotConfigRow:
+        return BotConfigRow(discord_token=data.discord_token)
 
 
 class BotConfigModel:
@@ -36,43 +52,32 @@ class BotConfigModel:
 
     async def _select(self) -> BotConfig:
         async with self._pool.acquire() as conn:
-            row = await conn.fetchrow(
-                """
-                SELECT discord_token FROM bot.bot_config
-                """
-            )
+            fields = FieldOrder(BotConfigRow)
+            row = await conn.fetchrow(f"SELECT {fields.columns} FROM bot.bot_config")
             if row is None:
                 raise LookupError(
                     "No rows in bot.bot_config\n\n"
                     + "You need to run 'python -m bot.setup' to create an initial configuration."
                 )
-            return BotConfig(discord_token=row["discord_token"])
+            return fields.from_tuple(row).to_data()
 
     async def _insert(self, config: BotConfig, /) -> None:
         async with self._pool.acquire() as conn:
             try:
+                fields = FieldOrder(BotConfigRow)
                 await conn.execute(
-                    """
-                    INSERT INTO bot.bot_config
-                        (discord_token)
-                        VALUES
-                        ($1)
-                    """,
-                    config.discord_token,
+                    f"INSERT INTO bot.bot_config ({fields.columns}) VALUES ({fields.placeholders})",
+                    *fields.to_tuple(BotConfigRow.from_data(config)),
                 )
             except asyncpg.exceptions.UniqueViolationError:
                 raise LookupError("A row in bot.bot_config already exists")
 
     async def _update(self, config: BotConfig, /) -> None:
         async with self._pool.acquire() as conn:
+            fields = FieldOrder(BotConfigRow)
             updated = await conn.fetchval(
-                """
-                UPDATE bot.bot_config
-                SET
-                    discord_token = $1
-                RETURNING TRUE
-                """,
-                config.discord_token,
+                f"UPDATE bot.bot_config SET {fields.set_list} RETURNING TRUE",
+                *fields.to_tuple(BotConfigRow.from_data(config)),
             )
             if updated is None:
                 raise LookupError("No rows in bot.bot_config")
