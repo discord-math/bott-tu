@@ -6,7 +6,7 @@ other interfaces.
 import asyncio
 
 from bot import get_database_connection_string
-from bot.config.bot import BotConfig, BotConfigModel
+from bot.config.bot import BotConfig, ConfigStore
 from bot.database.pool import create_database_pool
 
 
@@ -24,17 +24,17 @@ def _prompt_yes_no(prompt: str, /) -> bool:
 
 async def _async_main():
     pool = await create_database_pool(database_connection_string=get_database_connection_string())
-    model = BotConfigModel(pool)
+    store = ConfigStore(pool)
 
     discord_token = input("Enter Discord bot token: ")
 
     config = BotConfig(discord_token=discord_token)
 
     try:
-        await model.create_initial_config(config)
+        await store.create_initial_config(config)
     except LookupError:
         if _prompt_yes_no("A config already exists. Overwrite?"):
-            await model.set_config(config)
+            await store.set_bot_config(config)
 
 
 if __name__ == "__main__":
