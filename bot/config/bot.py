@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 import asyncpg
 
-from bot.database.interpolation import FieldOrder
+from bot.database.queries import FieldOrder
 
 
 @dataclass(kw_only=True, frozen=True)
@@ -29,26 +29,26 @@ class BotConfigRow:
         return BotConfigRow(discord_token=data.discord_token)
 
 
-class BotConfigModel:
-    __slots__ = "_pool", "_config"
-    _config: BotConfig | None
+class ConfigStore:
+    __slots__ = "_pool", "_bot_config"
+    _bot_config: BotConfig | None
 
     def __init__(self, pool: asyncpg.Pool, /):
         self._pool = pool
-        self._config = None
+        self._bot_config = None
 
-    async def get_config(self) -> BotConfig:
-        if self._config is None:
-            self._config = await self._select()
-        return self._config
+    async def get_bot_config(self) -> BotConfig:
+        if self._bot_config is None:
+            self._bot_config = await self._select()
+        return self._bot_config
 
-    async def set_config(self, config: BotConfig, /) -> None:
+    async def set_bot_config(self, config: BotConfig, /) -> None:
         await self._update(config)
-        self._config = config
+        self._bot_config = config
 
     async def create_initial_config(self, config: BotConfig, /) -> None:
         await self._insert(config)
-        self._config = config
+        self._bot_config = config
 
     async def _select(self) -> BotConfig:
         async with self._pool.acquire() as conn:

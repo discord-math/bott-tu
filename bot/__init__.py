@@ -6,7 +6,7 @@ accepting parameters that describe how the bot is deployed and where to find ser
 import asyncio
 import os
 
-from bot.config.bot import BotConfigModel
+from bot.config.bot import ConfigStore
 from bot.database.pool import create_database_pool
 
 
@@ -22,8 +22,8 @@ def get_database_connection_string():
 
 async def _async_main():
     pool = await create_database_pool(database_connection_string=get_database_connection_string())
-    model = BotConfigModel(pool)
-    print(await model.get_config())
+    store = ConfigStore(pool)
+    print(await store.get_bot_config())
 
 
 def main():
