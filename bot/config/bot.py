@@ -7,7 +7,7 @@ import asyncpg
 from bot.database.interpolation import FieldOrder
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, frozen=True)
 class BotConfig:
     """
     Top-level configuration, meaning values that scope over the entire bot, instead of being local to some guild,
@@ -17,7 +17,7 @@ class BotConfig:
     discord_token: str
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, frozen=True)
 class BotConfigRow:
     discord_token: str
 
