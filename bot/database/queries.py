@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import fields
 from typing import Any, Callable, Generic, Iterable, Iterator, Type, TypeVar
 
+import asyncpg.pool
+
 
 T = TypeVar("T")
 S = TypeVar("S")
@@ -154,3 +156,29 @@ class FieldOrder(Generic[T]):
         result._deconstruct = lambda arg: self._deconstruct(arg[0]) + [arg[1]]
         result._construct = lambda iter: (self._construct(iter), next(iter))
         return result
+
+
+_Connected = asyncpg.Connection | asyncpg.pool.PoolConnectionProxy
+
+
+async def select_single(connection: _Connected, table: str, cls: Type[T], condition: str | None = None, /) -> T | None:
+    """
+    Select the first row of the given table that satisfies the given condition, and build the given dataclass out of it.
+    Returns None if no such row is found.
+    """
+    fields = FieldOrder(cls)
+    row = await connection.fetchrow(
+        f"SELECT {fields.columns} FROM {table}" + ("" if condition is None else f" WHERE ({condition})")
+    )
+    return None if row is None else fields.from_tuple(row)
+
+
+async def insert(connection: _Connected, table: str, value: object, /) -> None:
+    """
+    Insert the given value (must be a dataclass) into the given table.
+    """
+    fields = FieldOrder(type(value))
+    await connection.execute(
+        f"INSERT INTO {table} ({fields.columns}) VALUES ({fields.placeholders})",
+        *fields.to_tuple(value),
+    )

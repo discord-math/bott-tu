@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 import asyncpg
 
-from bot.database.queries import FieldOrder
+from bot.database.queries import FieldOrder, insert, select_single
 
 
 @dataclass(kw_only=True, frozen=True)
@@ -27,6 +27,9 @@ class BotConfigRow:
     @staticmethod
     def from_data(data: BotConfig) -> BotConfigRow:
         return BotConfigRow(discord_token=data.discord_token)
+
+
+_bot_config_table = "bot.bot_config"
 
 
 class ConfigStore:
@@ -52,32 +55,27 @@ class ConfigStore:
 
     async def _select(self) -> BotConfig:
         async with self._pool.acquire() as conn:
-            fields = FieldOrder(BotConfigRow)
-            row = await conn.fetchrow(f"SELECT {fields.columns} FROM bot.bot_config")
+            row = await select_single(conn, _bot_config_table, BotConfigRow)
             if row is None:
                 raise LookupError(
-                    "No rows in bot.bot_config\n\n"
+                    f"No rows in {_bot_config_table}\n\n"
                     + "You need to run 'python -m bot.setup' to create an initial configuration."
                 )
-            return fields.from_tuple(row).to_data()
+            return row.to_data()
 
     async def _insert(self, config: BotConfig, /) -> None:
         async with self._pool.acquire() as conn:
             try:
-                fields = FieldOrder(BotConfigRow)
-                await conn.execute(
-                    f"INSERT INTO bot.bot_config ({fields.columns}) VALUES ({fields.placeholders})",
-                    *fields.to_tuple(BotConfigRow.from_data(config)),
-                )
+                await insert(conn, _bot_config_table, BotConfigRow.from_data(config))
             except asyncpg.exceptions.UniqueViolationError:
-                raise LookupError("A row in bot.bot_config already exists")
+                raise LookupError(f"A row in {_bot_config_table} already exists")
 
     async def _update(self, config: BotConfig, /) -> None:
         async with self._pool.acquire() as conn:
             fields = FieldOrder(BotConfigRow)
             updated = await conn.fetchval(
-                f"UPDATE bot.bot_config SET {fields.set_list} RETURNING TRUE",
+                f"UPDATE {_bot_config_table} SET {fields.set_list} RETURNING TRUE",
                 *fields.to_tuple(BotConfigRow.from_data(config)),
             )
             if updated is None:
-                raise LookupError("No rows in bot.bot_config")
+                raise LookupError(f"No rows in {_bot_config_table}")
