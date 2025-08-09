@@ -2,3 +2,47 @@ version: '3'
 services:
   bot:
     build: .
+    environment:
+      DATABASE: postgres://bot:bot@db/bot
+    depends_on:
+      db:
+        condition: service_healthy
+      migrations:
+        condition: service_completed_successfully
+
+  db:
+    image: postgres:17.5-alpine3.22
+    environment:
+      POSTGRES_USER: bot
+      POSTGRES_DB: bot
+      # Insecure credentials are ok if the DB ports aren't exposed to the world.
+      POSTGRES_PASSWORD: bot
+    volumes:
+      # Make DB data persistent
+      - db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bot -d bot"]
+      start_interval: 1s
+      start_period: 1m
+      interval: 10m
+    ports:
+      # Expose the DB port, but only to localhost, so that bot or sqitch running
+      # in dev environment (outside of docker) could connect.
+      - 127.0.0.1:5432:5432
+
+  # Before starting the bot, run schema migrations on the DB
+  migrations:
+    image: sqitch/sqitch:v1.5.2
+    volumes:
+      # The sqitch image starts with CWD in /repo
+      - ./migrations:/repo
+    depends_on:
+      db:
+        condition: service_healthy
+    command:
+      - "deploy"
+      - "-t"
+      - "db:pg://bot:bot@db/bot"
+
+volumes:
+  db:
