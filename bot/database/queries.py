@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import fields
-from typing import Any, Callable, Generic, Iterable, Iterator, Type, TypeVar
+from typing import Any, Callable, Generic, Iterable, Iterator, TypeVar
 
 import asyncpg.pool
 
@@ -51,11 +51,11 @@ class FieldOrder(Generic[T]):
         )
     """
 
-    _classes: list[tuple[str | None, Type[Any]]]
+    _classes: list[tuple[str | None, type[Any]]]
     _deconstruct: Callable[[T], list[Any]]
     _construct: Callable[[Iterator[Any]], T]
 
-    def __init__(self, cls: Type[T], /, *, prefix: str | None = None):
+    def __init__(self, cls: type[T], /, *, prefix: str | None = None):
         self._classes = [(prefix, cls)]
         self._deconstruct = lambda arg: [arg]
         self._construct = next
@@ -114,14 +114,14 @@ class FieldOrder(Generic[T]):
         Convert a tuple of fields of a dataclass in the correct order into an instance of that dataclass.
         E.g. ``FieldOrder(MyClass).from_tuple(t)`` is ``MyClass(x=t[0], y=t[1])``.
         """
-        inits: list[tuple[Type[Any], dict[str, Any]]]
+        inits: list[tuple[type[Any], dict[str, Any]]]
         inits = [(cls, {}) for _, cls in self._classes]
         for value, (kwargs, field) in zip(values, ((kwargs, field) for cls, kwargs in inits for field in fields(cls))):
             kwargs[field.name] = value
 
         return self._construct(cls(**kwargs) for cls, kwargs in inits)
 
-    def tupled(self, cls: Type[S], /, *, prefix: str | None = None) -> FieldOrder[tuple[T, S]]:
+    def tupled(self, cls: type[S], /, *, prefix: str | None = None) -> FieldOrder[tuple[T, S]]:
         """
         Construct a FieldOrder referencing more than one class at a time:
 
@@ -163,7 +163,7 @@ class FieldOrder(Generic[T]):
 _Connected = asyncpg.Connection | asyncpg.pool.PoolConnectionProxy
 
 
-async def select_single(connection: _Connected, table: str, cls: Type[T], condition: str | None = None, /) -> T | None:
+async def select_single(connection: _Connected, table: str, cls: type[T], condition: str | None = None, /) -> T | None:
     """
     Select the first row of the given table that satisfies the given condition, and build the given dataclass out of it.
     Returns None if no such row is found.
