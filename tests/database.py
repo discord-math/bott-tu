@@ -4,7 +4,7 @@ import asyncpg
 import asyncpg.transaction
 
 
-TEST_DB = "postgres://bot:bot@localhost/bot"
+TEST_DB = "postgres://test:test@localhost:54321/test"
 
 
 class DatabaseConnectedMixin(IsolatedAsyncioTestCase):

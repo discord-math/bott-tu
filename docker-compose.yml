@@ -44,5 +44,37 @@ services:
       - "-t"
       - "db:pg://bot:bot@db/bot"
 
+  # Services used in tests:
+  test-db:
+    profiles:
+      - tests
+    image: postgres:17.5-alpine3.22
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_DB: test
+      POSTGRES_PASSWORD: test
+    volumes: [] # Do not persist DB data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test -d test"]
+      start_interval: 1s
+      start_period: 1m
+      interval: 10m
+    ports:
+      - 127.0.0.1:54321:5432
+
+  test-migrations:
+    profiles:
+      - tests
+    image: sqitch/sqitch:v1.5.2
+    volumes:
+      - ./migrations:/repo
+    depends_on:
+      test-db:
+        condition: service_healthy
+    command:
+      - "deploy"
+      - "-t"
+      - "db:pg://test:test@test-db/test"
+
 volumes:
   db:
