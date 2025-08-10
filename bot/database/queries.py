@@ -98,7 +98,7 @@ class FieldOrder(Generic[T]):
             )
         )
 
-    def to_tuple(self, arg: T) -> tuple[Any]:
+    def to_tuple(self, arg: T) -> tuple[Any, ...]:
         """
         Convert a value of the dataclass into a tuple of its fields in the correct order.
         E.g. ``FieldOrder(MyClass).to_tuple(arg)`` is ``(arg.x, arg.y)``.
@@ -151,7 +151,9 @@ class FieldOrder(Generic[T]):
             my, other = taggedFields.from_tuple(row)
 
         """
-        result = FieldOrder.__new__(FieldOrder[tuple[T, S]])
+
+        ty: type[FieldOrder[tuple[T, S]]] = FieldOrder  # type: ignore
+        result = FieldOrder.__new__(ty)
         result._classes = self._classes + [(prefix, cls)]
         result._deconstruct = lambda arg: self._deconstruct(arg[0]) + [arg[1]]
         result._construct = lambda iter: (self._construct(iter), next(iter))
