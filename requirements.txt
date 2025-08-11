@@ -1,1 +1,2 @@
 asyncpg==0.30.0
+python-json-logger==3.3.0
