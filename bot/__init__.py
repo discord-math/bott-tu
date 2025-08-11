@@ -47,9 +47,9 @@ async def _async_main():
     assert task
     task.set_name("Main Task")
 
-    pool = await create_database_pool(database_connection_string=get_database_connection_string())
-    store = ConfigStore(pool)
-    logging.info(await store.get_bot_config())
+    async with await create_database_pool(database_connection_string=get_database_connection_string()) as pool:
+        store = ConfigStore(pool)
+        logging.info(await store.get_bot_config())
 
 
 def main():
