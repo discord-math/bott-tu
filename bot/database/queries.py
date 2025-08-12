@@ -15,8 +15,8 @@ class FieldOrder(Generic[T]):
     This class helps convert dataclasses to and from ordered lists of fields, in order to help construct SQL queries in
     a way where one does not accidentally mess up the field names or the field order.
 
-    An instance of FieldOrder holds onto one or more classes, and all its methods use the same order to talk about the
-    classes and their fields.
+    An instance of :class:`FieldOrder` holds onto one or more classes, and all its methods use the same order to talk
+    about the classes and their fields.
 
     Given a dataclass:
 
@@ -33,13 +33,18 @@ class FieldOrder(Generic[T]):
 
     .. code-block:: python
 
-        row = await conn.execute(f"SELECT {fields.columns} FROM table")
+        row = await conn.execute(
+            f"SELECT {fields.columns} FROM table",
+        )
         value = fields.from_tuple(row)
 
     .. code-block:: python
 
         await conn.execute(
-            f"INSERT INTO table ({fields.columns}) VALUES ({fields.placeholders})",
+            f\"\"\"
+            INSERT INTO table ({fields.columns})
+                VALUES ({fields.placeholders})
+            \"\"\",
             *fields.to_tuple(value),
         )
 
@@ -123,7 +128,7 @@ class FieldOrder(Generic[T]):
 
     def tupled(self, cls: type[S], /, *, prefix: str | None = None) -> FieldOrder[tuple[T, S]]:
         """
-        Construct a FieldOrder referencing more than one class at a time:
+        Construct a :class:`FieldOrder` referencing more than one class at a time:
 
         .. code-block:: python
 
@@ -136,18 +141,26 @@ class FieldOrder(Generic[T]):
             # allFields.columns is "x, y, z"
             # allFields.placeholders is "$1, $2, $3"
             # allFields.set_list is "x = $1, y = $2, z = $3"
-            # allFields.to_tuple(arg) is (arg[0].x, arg[0].y, arg[1].z)
-            # allFields.from_tuple(t) is (MyClass(x=t[0], y=t[1]), OtherClass(z=t[2]))
+            # allFields.to_tuple(arg) is
+            #     (arg[0].x, arg[0].y, arg[1].z)
+            # allFields.from_tuple(t) is
+            #     (MyClass(x=t[0], y=t[1]), OtherClass(z=t[2]))
 
-        The ``prefix`` arguments can be used to disambiguate column expressions:
+        The ``prefix`` argument of the constructor can be used to disambiguate column expressions:
 
         .. code-block:: python
 
-            taggedFields = FieldOrder(MyClass, prefix="my").tupled(OtherClass, prefix="other")
+            taggedFields = FieldOrder(MyClass, prefix="my") \
+                .tupled(OtherClass, prefix="other")
 
             # taggedFields.columns is "my.x, my.y, other.z"
 
-            row = await conn.execute(f"SELECT {taggedFields.columns} FROM table AS my, table2 AS other")
+            row = await conn.execute(
+                f\"\"\"
+                SELECT {taggedFields.columns}
+                    FROM table AS my, table2 AS other
+                \"\"\",
+            )
             my, other = taggedFields.from_tuple(row)
 
         """
@@ -165,8 +178,8 @@ _Connected = asyncpg.Connection | asyncpg.pool.PoolConnectionProxy
 
 async def select_single(connection: _Connected, table: str, cls: type[T], condition: str | None = None, /) -> T | None:
     """
-    Select the first row of the given table that satisfies the given condition, and build the given dataclass out of it.
-    Returns None if no such row is found.
+    Select the first row of the given table that satisfies the given condition (SQL expression), and build the given
+    dataclass out of it. Returns ``None`` if no such row is found.
     """
     fields = FieldOrder(cls)
     row = await connection.fetchrow(
