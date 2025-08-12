@@ -13,4 +13,4 @@ def log_query(query: asyncpg.connection.LoggedQuery) -> None:
     if query.exception:
         kwargs["exception"] = str(query.exception)
 
-    logger.info("%s", query.query, extra={"query": kwargs})
+    logger.debug(query.query, extra={"query": kwargs})

@@ -1,9 +1,11 @@
 from dataclasses import dataclass
-from unittest import TestCase
+import logging
+from unittest import IsolatedAsyncioTestCase, TestCase
 from unittest.mock import sentinel
 
+from bot.database.pool import create_database_pool
 from bot.database.queries import FieldOrder, insert, select_single
-from tests.database import InTransactionMixin
+from tests.database import TEST_DB, InTransactionMixin
 
 
 @dataclass
@@ -136,3 +138,12 @@ class TestQueries(InTransactionMixin):
 
         val = await select_single(self.conn, "tbl", MyClass, "x = 456")
         self.assertEqual(mc2, val)
+
+
+class TestLogging(IsolatedAsyncioTestCase):
+    async def test_logging(self):
+        async with await create_database_pool(database_connection_string=TEST_DB) as pool:
+            with self.assertLogs("bot.database.logging", logging.DEBUG) as record:
+                async with pool.acquire() as conn:
+                    await conn.fetchval("SELECT 1")
+            self.assertIn("DEBUG:bot.database.logging:SELECT 1", record.output)
