@@ -6,6 +6,7 @@ accepting parameters that describe how the bot is deployed and where to find ser
 import asyncio
 import logging
 import os
+import sys
 
 from pythonjsonlogger.json import JsonFormatter
 
@@ -54,4 +55,8 @@ async def _async_main():
 
 def main():
     setup_logging()
-    asyncio.run(_async_main())
+    try:
+        asyncio.run(_async_main())
+    except BaseException:
+        logging.error("Exception in main", exc_info=True)
+        sys.exit(1)
