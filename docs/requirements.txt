@@ -1,2 +1,2 @@
-sphinx >=3
-sphinx-autoapi
+sphinx==8.2.3
+sphinx-autoapi==3.6.1
