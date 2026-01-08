@@ -14,11 +14,16 @@ author = "mniip"
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
+    "sphinx.ext.intersphinx",
     "autoapi.extension",
 ]
 
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", ".venv"]
+
+intersphinx_mapping = {
+    "py": ("https://docs.python.org/3", None),
+}
 
 # -- sphinx-autoapi options --------------------------------------------------
 # https://sphinx-autoapi.readthedocs.io/en/latest/reference/config.html
