@@ -11,6 +11,7 @@ from pythonjsonlogger.json import JsonFormatter
 
 from bot.config.bot import ConfigStore
 from bot.database.pool import create_database_pool
+from bot.utils.tracing import SpanIdInjector
 
 
 def get_database_connection_string() -> str:
@@ -35,6 +36,7 @@ def setup_logging() -> None:
             style="{",
         )
     )
+    handler.addFilter(SpanIdInjector())
     logging.basicConfig(
         force=True,
         level=logging.NOTSET,
