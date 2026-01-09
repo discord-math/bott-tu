@@ -8,6 +8,10 @@ async def _init_connection(connection: asyncpg.Connection) -> None:
 
 
 async def create_database_pool(*, database_connection_string: str) -> asyncpg.Pool:
+    """
+    Create a DB connection pool. This should only be called once, as there should only be one :class:`asyncpg.Pool` in
+    the bot process.
+    """
     pool = await asyncpg.create_pool(
         dsn=database_connection_string,
         init=_init_connection,
