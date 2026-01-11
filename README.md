@@ -50,3 +50,22 @@ Upon every change to the codebase you'll need to re-do the "build" step. If the 
   ```
 
 This way the bot will run the code in the working directory. If the DB is cleaned out by e.g. `docker compose down --volumes`, you'll need to re-do the "initial configuration" step.
+
+# Generating Docs
+
+- (Optional) Enter the bot's virtual environment:
+  ```sh
+  source .venv/bin/activate
+  ```
+- Install doc dependencies (only required once):
+  ```sh
+  pip install -r docs/requirements.txt
+  ```
+- Build the docs:
+  ```sh
+  sphinx-build docs docs/_build
+  ```
+- View the docs:
+  ```sh
+  xdg-open docs/_build/index.html
+  ```

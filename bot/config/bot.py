@@ -19,6 +19,10 @@ class BotConfig:
 
 @dataclass(kw_only=True, frozen=True)
 class BotConfigRow:
+    """
+    Columns of the ``bot.bot_config`` table.
+    """
+
     discord_token: str
 
     def to_data(self) -> BotConfig:
@@ -33,6 +37,10 @@ _bot_config_table = "bot.bot_config"
 
 
 class ConfigStore:
+    """
+    A class responsible for loading/storing :class:`BotConfig` value(s) to the DB, and maintaining an in-memory cache.
+    """
+
     __slots__ = "_pool", "_bot_config"
     _bot_config: BotConfig | None
 
@@ -41,15 +49,18 @@ class ConfigStore:
         self._bot_config = None
 
     async def get_bot_config(self) -> BotConfig:
+        """Raises if no config exists."""
         if self._bot_config is None:
             self._bot_config = await self._select()
         return self._bot_config
 
     async def set_bot_config(self, config: BotConfig, /) -> None:
+        """Raises if no config exists."""
         await self._update(config)
         self._bot_config = config
 
     async def create_initial_config(self, config: BotConfig, /) -> None:
+        """Raises if a config already exists."""
         await self._insert(config)
         self._bot_config = config
 
