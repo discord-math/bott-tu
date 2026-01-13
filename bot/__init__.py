@@ -4,6 +4,7 @@ accepting parameters that describe how the bot is deployed and where to find ser
 """
 
 import asyncio
+from datetime import datetime, timezone
 import logging
 import os
 
@@ -25,16 +26,22 @@ def get_database_connection_string() -> str:
 
 def setup_logging() -> None:
     handler = logging.StreamHandler()
-    handler.setFormatter(
-        JsonFormatter(
-            # The text portion of this format string is ignored, but the list of placeholders used determines which keys
-            # are put into the logged JSON object.
-            # Note that exc_info and stack_info are already included (when available).
-            # {name} is the Logger name (usually name of module where it is created)
-            "{asctime}{levelname}{name}{taskName}{module}{funcName}{lineno}{message}",
-            style="{",
-        )
+    formatter = JsonFormatter(
+        # The text portion of this format string is ignored, but the list of placeholders used determines which keys are
+        # put into the logged JSON object.
+        # Note that exc_info and stack_info are already included (when available).
+        # {name} is the Logger name (usually name of module where it is created)
+        "{asctime}{levelname}{name}{taskName}{module}{funcName}{lineno}{message}",
+        style="{",
     )
+    # When converting any extra data in logs into JSON, JsonFormatter will format datetime objects as ISO8601/RFC-3339,
+    # e.g. "1970-01-01T00:00:00.000000+00:00". However the timestamp of the log itself is formatted by a separate
+    # procedure in `logging`. The default time format in `logging` is a little quirky, so we replace it to use
+    # ISO8601/RFC-3339 as well.
+    formatter.formatTime = lambda record, datefmt=None: datetime.fromtimestamp(record.created, timezone.utc).isoformat(
+        timespec="microseconds"  # Don't omit the .000000 just because the timestamp turned out to be an integer
+    )
+    handler.setFormatter(formatter)
     logging.basicConfig(
         force=True,
         level=logging.NOTSET,
