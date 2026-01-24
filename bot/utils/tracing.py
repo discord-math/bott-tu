@@ -27,10 +27,12 @@ from uuid import UUID, uuid4
 _trace_span_id: ContextVar[tuple[UUID, UUID] | None] = ContextVar("_trace_span_id", default=None)
 
 
-_no_caller_info = ("(unknown file)", 0, "(unknown function)")
+# Filename, line number, function -- the same format that `logging` uses.
+_CallerInfo = tuple[str, int, str]
+_no_caller_info: _CallerInfo = ("(unknown file)", 0, "(unknown function)")
 
 
-def _get_caller_info(level: int) -> tuple[str, int, str]:
+def _get_caller_info(level: int) -> _CallerInfo:
     frame = logging.currentframe()
     for _ in range(level):
         if frame is None:
@@ -44,14 +46,14 @@ def _get_caller_info(level: int) -> tuple[str, int, str]:
 @dataclass(kw_only=True, frozen=True)
 class _TraceStartInfo:
     msg: str
-    caller_info: tuple[str, int, str]
+    caller_info: _CallerInfo
     parent_trace_span_id: tuple[UUID, UUID] | None
     trace_id: UUID
     span_id: UUID
     start_time: datetime
 
 
-def _start_trace(msg: str, caller_info: tuple[str, int, str], /) -> _TraceStartInfo:
+def _start_trace(msg: str, caller_info: _CallerInfo, /) -> _TraceStartInfo:
     parent_trace_span_id = _trace_span_id.get()
     trace_id = uuid4() if parent_trace_span_id is None else parent_trace_span_id[0]
     span_id = uuid4()
